@@ -849,6 +849,9 @@ Function *CodeExtractor::constructFunction(const ValueSet &inputs,
       // includes non-function attributes.
       case Attribute::Alignment:
       case Attribute::AllocSize:
+      case Attribute::AssumeHeapPointer:
+      case Attribute::AssumeNonHeapPointer:
+      case Attribute::AssumeMixedPointer:
       case Attribute::ArgMemOnly:
       case Attribute::Builtin:
       case Attribute::ByVal:

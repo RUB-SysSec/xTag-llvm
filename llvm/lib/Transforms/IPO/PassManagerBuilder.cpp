@@ -325,6 +325,7 @@ void PassManagerBuilder::addPGOInstrPasses(legacy::PassManagerBase &MPM,
     MPM.add(createInstructionCombiningPass()); // Combine silly seq's
     addExtensionsToPM(EP_Peephole, MPM);
   }
+  MPM.add(createUAFProfilerPass(true));
   if ((EnablePGOInstrGen && !IsCS) || (EnablePGOCSInstrGen && IsCS)) {
     MPM.add(createPGOInstrumentationGenLegacyPass(IsCS));
     // Add the profile lowering pass.
@@ -336,8 +337,15 @@ void PassManagerBuilder::addPGOInstrPasses(legacy::PassManagerBase &MPM,
     MPM.add(createLoopRotatePass());
     MPM.add(createInstrProfilingLegacyPass(Options, IsCS));
   }
-  if (!PGOInstrUse.empty())
+  if (!PGOInstrUse.empty()) {
+    llvm::errs() << "now using the profile data\n";
     MPM.add(createPGOInstrumentationUseLegacyPass(PGOInstrUse, IsCS));
+    MPM.add(createUAFProfilerPass(false));
+    // the selects we created are trivially dead; as our metadata
+    // got moved to other (not trivially dead at this point)
+    // instructions we can remove them
+    MPM.add(createDeadInstEliminationPass());
+  }
   // Indirect call promotion that promotes intra-module targets only.
   // For ThinLTO this is done earlier due to interactions with globalopt
   // for imported functions. We don't run this at -O0.
@@ -467,6 +475,7 @@ void PassManagerBuilder::addFunctionSimplificationPasses(
 
 void PassManagerBuilder::populateModulePassManager(
     legacy::PassManagerBase &MPM) {
+
   // Whether this is a default or *LTO pre-link pipeline. The FullLTO post-link
   // is handled separately, so just check this is not the ThinLTO post-link.
   bool DefaultOrPreLinkPipeline = !PerformThinLTO;
@@ -577,13 +586,18 @@ void PassManagerBuilder::populateModulePassManager(
   // profile annotation in backend more difficult.
   // PGO instrumentation is added during the compile phase for ThinLTO, do
   // not run it a second time
-  if (DefaultOrPreLinkPipeline && !PrepareForThinLTOUsingPGOSampleProfile)
+  if (DefaultOrPreLinkPipeline && !PrepareForThinLTOUsingPGOSampleProfile) {
+    llvm::errs() << "mark2 pre\n";
+    llvm::errs() << "mark2 PGOInstrGen: " << PGOInstrGen << " PGOInstrUse " << PGOInstrGen << "\n";
     addPGOInstrPasses(MPM);
+  }
 
   // Create profile COMDAT variables. Lld linker wants to see all variables
   // before the LTO/ThinLTO link since it needs to resolve symbols/comdats.
-  if (!PerformThinLTO && EnablePGOCSInstrGen)
+  if (!PerformThinLTO && EnablePGOCSInstrGen) {
+    llvm::errs() << "mark1 PGOInstrGen: " << PGOInstrGen << " PGOInstrUse " << PGOInstrGen << "\n";
     MPM.add(createPGOInstrumentationGenCreateVarLegacyPass(PGOInstrGen));
+  }
 
   // We add a module alias analysis pass here. In part due to bugs in the
   // analysis infrastructure this "works" in that the analysis stays alive
@@ -631,8 +645,10 @@ void PassManagerBuilder::populateModulePassManager(
   // are performed.
   // Need to do this after COMDAT variables have been eliminated,
   // (i.e. after EliminateAvailableExternallyPass).
-  if (!(PrepareForLTO || PrepareForThinLTO))
+  if (!(PrepareForLTO || PrepareForThinLTO)) {
+    llvm::errs() << "mark3 PGOInstrGen: " << PGOInstrGen << " PGOInstrUse " << PGOInstrGen << "\n";
     addPGOInstrPasses(MPM, /* IsCS */ true);
+  }
 
   if (EnableOrderFileInstrumentation)
     MPM.add(createInstrOrderFilePass());
@@ -828,6 +844,15 @@ void PassManagerBuilder::populateModulePassManager(
   MPM.add(createCFGSimplificationPass());
 
   addExtensionsToPM(EP_OptimizerLast, MPM);
+
+  // TODO raise exception if neiter PerformThinLTO nor PrepareForLTO is set?
+
+  // we don't instrument in PGO collection mode, just for the final
+  // binary
+  if (PerformThinLTO && !(EnablePGOInstrGen || EnablePGOCSInstrGen)) {
+    MPM.add(createUAFCheckerPass(ImportSummary));
+    MPM.add(createCFGSimplificationPass());
+  }
 
   if (PrepareForLTO) {
     MPM.add(createCanonicalizeAliasesPass());

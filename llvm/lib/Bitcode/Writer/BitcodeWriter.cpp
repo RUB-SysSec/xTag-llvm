@@ -606,6 +606,12 @@ static uint64_t getAttrKindEncoding(Attribute::AttrKind Kind) {
     return bitc::ATTR_KIND_ALWAYS_INLINE;
   case Attribute::ArgMemOnly:
     return bitc::ATTR_KIND_ARGMEMONLY;
+  case Attribute::AssumeHeapPointer:
+    return bitc::ATTR_KIND_ASSUME_HEAP_POINTER;
+  case Attribute::AssumeNonHeapPointer:
+    return bitc::ATTR_KIND_ASSUME_NON_HEAP_POINTER;
+  case Attribute::AssumeMixedPointer:
+    return bitc::ATTR_KIND_ASSUME_MIXED_POINTER;
   case Attribute::Builtin:
     return bitc::ATTR_KIND_BUILTIN;
   case Attribute::ByVal:
@@ -1007,6 +1013,7 @@ static uint64_t getEncodedFFlags(FunctionSummary::FFlags Flags) {
   RawFlags |= (Flags.ReturnDoesNotAlias << 3);
   RawFlags |= (Flags.NoInline << 4);
   RawFlags |= (Flags.AlwaysInline << 5);
+  RawFlags |= (Flags.NoFree << 6);
   return RawFlags;
 }
 

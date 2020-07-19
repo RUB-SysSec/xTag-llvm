@@ -4417,6 +4417,23 @@ bool AddressingModeMatcher::matchOperationAddr(User *AddrInst, unsigned Opcode,
 /// for the target.
 ///
 bool AddressingModeMatcher::matchAddr(Value *Addr, unsigned Depth) {
+  // this is a hacky way to prevent a promotion which introduces an
+  // unnecessary mov instruction in our critical path during tag validation
+  if (GetElementPtrInst* gep = dyn_cast<GetElementPtrInst>(Addr)) {
+    if (gep->getNumIndices() == 1) {
+      if (ZExtInst* zext = dyn_cast<ZExtInst>(gep->getOperand(1))) {
+        if (zext->getDestTy()->isIntegerTy(64) &&
+            zext->getSrcTy()->isIntegerTy(32)) {
+          if (BinaryOperator* binOp = dyn_cast<BinaryOperator>(zext->getOperand(0))) {
+            if (binOp->getOpcode() == Instruction::LShr) {
+              return false;
+            }
+          }
+        }
+      }
+    }
+  }
+
   // Start a transaction at this point that we will rollback if the matching
   // fails.
   TypePromotionTransaction::ConstRestorationPt LastKnownGood =

@@ -550,6 +550,7 @@ public:
     unsigned NoInline : 1;
     // Indicate if function should be always inlined.
     unsigned AlwaysInline : 1;
+    unsigned NoFree : 1;
   };
 
   /// Create an empty FunctionSummary (with specified call edges).

@@ -961,6 +961,7 @@ static FunctionSummary::FFlags getDecodedFFlags(uint64_t RawFlags) {
   Flags.ReturnDoesNotAlias = (RawFlags >> 3) & 0x1;
   Flags.NoInline = (RawFlags >> 4) & 0x1;
   Flags.AlwaysInline = (RawFlags >> 5) & 0x1;
+  Flags.NoFree = (RawFlags >> 6) & 0x1;
   return Flags;
 }
 
@@ -1300,6 +1301,15 @@ static uint64_t getRawAttributeMask(Attribute::AttrKind Val) {
   case Attribute::SanitizeMemTag:
     llvm_unreachable("sanitize_memtag attribute not supported in raw format");
     break;
+  case Attribute::AssumeHeapPointer:
+    llvm_unreachable("assume_heap_pointer attribute not supported in raw format");
+    break;
+  case Attribute::AssumeNonHeapPointer:
+    llvm_unreachable("assume_non_heap_pointer attribute not supported in raw format");
+    break;
+  case Attribute::AssumeMixedPointer:
+    llvm_unreachable("assume_mixed_pointer attribute not supported in raw format");
+    break;
   }
   llvm_unreachable("Unsupported attribute type");
 }
@@ -1419,6 +1429,12 @@ static Attribute::AttrKind getAttrFromCode(uint64_t Code) {
     return Attribute::AlwaysInline;
   case bitc::ATTR_KIND_ARGMEMONLY:
     return Attribute::ArgMemOnly;
+  case bitc::ATTR_KIND_ASSUME_HEAP_POINTER:
+    return Attribute::AssumeHeapPointer;
+  case bitc::ATTR_KIND_ASSUME_NON_HEAP_POINTER:
+    return Attribute::AssumeNonHeapPointer;
+  case bitc::ATTR_KIND_ASSUME_MIXED_POINTER:
+    return Attribute::AssumeMixedPointer;
   case bitc::ATTR_KIND_BUILTIN:
     return Attribute::Builtin;
   case bitc::ATTR_KIND_BY_VAL:

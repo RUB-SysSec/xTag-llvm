@@ -26,6 +26,15 @@ def AlwaysInline : EnumAttr<"alwaysinline">;
 /// Function can access memory only using pointers based on its arguments.
 def ArgMemOnly : EnumAttr<"argmemonly">;
 
+// Function argument probably points into the heap
+def AssumeHeapPointer : EnumAttr<"assumeheappointer">;
+
+// Function argument probably does not point into the heap
+def AssumeNonHeapPointer : EnumAttr<"assumenonheappointer">;
+
+// Function argument probably does not point into the heap
+def AssumeMixedPointer : EnumAttr<"assumemixedpointer">;
+
 /// Callee is recognized as a builtin, despite nobuiltin attribute on its
 /// declaration.
 def Builtin : EnumAttr<"builtin">;

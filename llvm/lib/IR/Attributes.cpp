@@ -284,6 +284,12 @@ std::string Attribute::getAsString(bool InAttrGrp) const {
     return "sanitize_memtag";
   if (hasAttribute(Attribute::AlwaysInline))
     return "alwaysinline";
+  if (hasAttribute(Attribute::AssumeHeapPointer))
+    return "assumeHeap";
+  if (hasAttribute(Attribute::AssumeNonHeapPointer))
+    return "assumeNoHeap";
+  if (hasAttribute(Attribute::AssumeMixedPointer))
+    return "assumeMixed";
   if (hasAttribute(Attribute::ArgMemOnly))
     return "argmemonly";
   if (hasAttribute(Attribute::Builtin))

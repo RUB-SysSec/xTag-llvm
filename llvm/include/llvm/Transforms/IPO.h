@@ -274,6 +274,9 @@ ModulePass *createSampleProfileLoaderPass(StringRef Name);
 ModulePass *createWriteThinLTOBitcodePass(raw_ostream &Str,
                                           raw_ostream *ThinLinkOS = nullptr);
 
+FunctionPass *createUAFCheckerPass(const ModuleSummaryIndex* summaryIndex);
+FunctionPass *createUAFProfilerPass(bool addInstrumentation);
+
 } // End llvm namespace
 
 #endif
